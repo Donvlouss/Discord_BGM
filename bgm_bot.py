@@ -192,8 +192,11 @@ async def on_message(message: discord.Message):
             for attachment in message.attachments:
                 if any(attachment.filename.lower().endswith(sub) for sub in sub_filename):
                     await message.channel.send("```File >> [{}] Uploading...```".format(attachment.filename))
-                    await attachment.save(attachment.filename)
-                    await message.channel.send("```File Uploaded!\nSet Upload mp3 file Option [OFF]```")
+                    if (attachment.size/1024/1024) < 1:
+                        await attachment.save(attachment.filename)
+                        await message.channel.send("```File Uploaded!\nSet Upload mp3 file Option [OFF]```")
+                    else:
+                        await message.channel.send("```File is too Large! (need < 1MB)\nSet Upload mp3 file Option [OFF]```")
     except:
         if flag:
             await message.channel.send("```Upload error...```")
