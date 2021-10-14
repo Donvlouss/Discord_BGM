@@ -5,6 +5,7 @@ import random
 import asyncio
 import discord
 import youtube_dl
+from mutagen.mp3 import MP3
 from datetime import datetime
 from discord.ext import commands
 
@@ -99,7 +100,7 @@ async def add_user(ctx, id, link, time, img=""):
     with open('config.json', 'w', encoding='utf-8') as f:
         json.dump(data, f)
     user = data["clients"][str(id)]
-    await ctx.send("ID:{}\nBGM:{}\nTIME:{}\nIMG:{}".format(str(id), user['bgm'], user['time'], user['img']))
+    await ctx.send("```cs\nID:{}\nBGM:{}\nTIME:{}\nIMG:{}```".format(str(id), user['bgm'], user['time'], user['img']))
 
 @bot.command()
 async def add_subm(ctx, id, img):
@@ -108,7 +109,7 @@ async def add_subm(ctx, id, img):
     }
     with open('config.json', 'w', encoding='utf-8') as f:
         json.dump(data, f)
-    await ctx.send("Add Image success!")
+    await ctx.send("```diff\n-Add Image success!```")
 
 @bot.command()
 async def add_bgm(ctx,id,link):
@@ -120,7 +121,7 @@ async def add_bgm(ctx,id,link):
     data["clients"][str(id)]['bgm'] = links
     with open('config.json', 'w', encoding='utf-8') as f:
         json.dump(data, f)
-    await ctx.send("ID:{}\nBGM:{}".format(str(id), data["clients"][str(id)]['bgm']))
+    await ctx.send("```cs\nID:{}\nBGM:\n{}```".format(str(id), "\n\t".join(data["clients"][str(id)]['bgm'])))
         
 @bot.command()
 async def remove_bgm(ctx, id, link):
@@ -132,23 +133,48 @@ async def remove_bgm(ctx, id, link):
         pass
     with open('config.json', 'w', encoding='utf-8') as f:
         json.dump(data, f)
-    await ctx.send("{} is removed!".format(link))
+    await ctx.send("```py\n'{} is removed!'```".format(link))
 
 @bot.command()
 async def list_user(ctx, id):
     user = data["clients"][str(id)]
-    await ctx.send("ID:{}\nBGM:{}\nTIME:{}\nIMG:{}".format(str(id), user['bgm'], user['time'], user['img']))
+    bgms = []
+    if isinstance(user['bgm'], str):
+        bgms = [user['bgm']]
+    elif isinstance(user['bgm'], list):
+        bgms = user['bgm']
+    await ctx.send("```cs\nID:{}\nBGM:\n\t{}\nTIME:{}\nIMG:{}```".format(str(id), "\n\t".join(bgms), user['time'], user['img']))
 
 @bot.command()
 async def update_context(ctx):
     global data
     with open('config.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
-    await ctx.send('>>> Updata seccusful <<<')
+    await ctx.send('```markdown\n#Updata seccusful```')
+
+@bot.command()
+async def list_bgms(ctx):
+    files = os.listdir(os.getcwd())
+    bgms=[]
+    for file in files:
+        if ".mp3" in file:
+            bgms.append(file)
+    
+    await ctx.send("```cs\nCurrent BGMs :\n\t{}```".format("\n\t".join(bgms)))
+
+@bot.command()
+async def audition(ctx, file):
+    vch = ctx.message.author.voice.channel 
+    if os.path.isfile(os.path.join(os.getcwd(), file)):
+        vc = await vch.connect()
+        times = min(int(MP3(file).info.length)+1, 10)
+        vc.play(discord.FFmpegPCMAudio(executable=data["FFmpeg"], source=file))
+        await asyncio.sleep(times)
+        await vc.disconnect()
 
 @bot.command()
 async def shutdown_security(ctx):
-    await ctx.send('>>> Bot Shutdown <<<')
+    await ctx.send('```markdown\n#Bot Shutdown```')
     await ctx.bot.logout()
 
 @bot.event
