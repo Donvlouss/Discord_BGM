@@ -33,6 +33,9 @@ ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 bot = commands.Bot(command_prefix='!')
 path = 'https://www.youtube.com/watch?v=q6EoRBvdVPQ'
 ffmpegss = r"C:\Users\K604_DON\Documents\ffmpeg\bin\ffmpeg.exe"
+sub_filename = ["mp3"]
+global flag
+flag = False
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -171,6 +174,31 @@ async def audition(ctx, file):
         vc.play(discord.FFmpegPCMAudio(executable=data["FFmpeg"], source=file))
         await asyncio.sleep(times)
         await vc.disconnect()
+        
+@bot.command()
+async def upload(ctx):
+    # print("Set to True")
+    await ctx.send("```Set Upload mp3 file Option [ON]```")
+    global flag
+    flag = True
+    
+@bot.event
+async def on_message(message: discord.Message):
+    await bot.process_commands(message)
+    if message.content.startswith('!'): return
+    global flag
+    try:
+        if flag:
+            for attachment in message.attachments:
+                if any(attachment.filename.lower().endswith(sub) for sub in sub_filename):
+                    await message.channel.send("```File >> [{}] Uploading...```".format(attachment.filename))
+                    await attachment.save(attachment.filename)
+                    await message.channel.send("```File Uploaded!\nSet Upload mp3 file Option [OFF]```")
+    except:
+        if flag:
+            await message.channel.send("```Upload error...```")
+    finally:
+        flag = False
 
 @bot.command()
 async def shutdown_security(ctx):
